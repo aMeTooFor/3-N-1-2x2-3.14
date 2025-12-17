@@ -1,0 +1,69 @@
+object frmMain: TfrmMain
+  Left = 248
+  Height = 442
+  Top = 172
+  Width = 849
+  Caption = '角谷猜想的机器证明'
+  ClientHeight = 442
+  ClientWidth = 849
+  LCLVersion = '3.0.0.1'
+  object btnRUN: TButton
+    Left = 544
+    Height = 25
+    Top = 32
+    Width = 75
+    Caption = 'RUN'
+    OnClick = btnRUNClick
+    TabOrder = 0
+  end
+  object Edit1: TEdit
+    Left = 112
+    Height = 33
+    Top = 30
+    Width = 176
+    TabOrder = 1
+    Text = 'Edit1'
+  end
+  object Edit2: TEdit
+    Left = 110
+    Height = 33
+    Top = 82
+    Width = 178
+    TabOrder = 2
+    Text = 'Edit2'
+  end
+  object TreeView1: TTreeView
+    Left = 328
+    Height = 97
+    Top = 8
+    Width = 121
+    TabOrder = 3
+  end
+  object Memo1: TMemo
+    Left = 24
+    Height = 288
+    Top = 136
+    Width = 800
+    Lines.Strings = (
+      ''
+    )
+    ScrollBars = ssBoth
+    TabOrder = 4
+  end
+  object Button2: TButton
+    Left = 464
+    Height = 25
+    Top = 82
+    Width = 75
+    Caption = 'Button2'
+    TabOrder = 5
+  end
+  object Button3: TButton
+    Left = 552
+    Height = 25
+    Top = 82
+    Width = 75
+    Caption = 'Button3'
+    TabOrder = 6
+  end
+end

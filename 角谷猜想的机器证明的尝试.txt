@@ -1,0 +1,160 @@
+                        角谷猜想的机器证明的尝试
+                                          三界火宅人
+      角谷猜想，估计用传统数学的手工方式难证，或象四色定理一样，要机器辅助证明乎。这也是尝试，未知结果。或是一方向，不知有没成果的。
+      数学归纳法下，设当前自然数是n,如果n是偶数，必定除2,立即小于n，数学归纳法必成，所以只理奇数。如果n=4k+1,乘三加一为12k+4,这时除4为3k+1,必小于原数n，数学归纳法必成。这时，轮到n=4k+3这个不成了。一种猜想是，这个k，不停细分下去，例如,k=2i+1与k=2i时，又i=2j与2j+1时，这样下去，会不会有结果呢？
+     这样，我手工尝试，发现很烦，显然手工下不可能。于是，忽想到，这不就是机器证明的需要需求到来了吗？
+于是，打开开源的linux/ubuntu,开源的lazarus，暂不需要开源的sqlite,立即写个递归函数，测试系数的分支，是不是全部可以被证明小于原数，象一颗树，所有分支被包围，最后回归。这是一种方向，或需要不停修剪枝节乎。
+     一开始，我写的系数分支递归函数竟然返回OK成功，这令一时颀喜若狂，后来发现，原来很多分枝超大超出integer最大值，变成负数，所以才如此。于是改成longint,int64,发现仍然如此，然后，改进算法。
+    这个系数分枝递归树，列出来，高达100MB或以上，所以，人力不可为乎，纸上得来终觉浅乎。于是，我认为可以改进算法，修改各种判断条件，一时，减少到100KB左右，以为成了，后来发现，仍是错的，因为，n=a*k+b，形式的系数，角谷运算时，当a,b是奇数时，无法判明n是奇是偶的，所以不可以就立即角谷运算的，也不可以除最大公约数的，当含有公约数是2^n时才可以的。
+    虽然这次不成，科学就是这样的，只看最后一次结果的才叫科学乎。方向正确，就会有后继者继续研究乎？
+是以将代码贴出，同行们一齐研究乎。
+
+procedure TfrmMain.btnRUNClick(Sender: TObject);
+var
+  www: integer;
+begin
+  self.Memo1.Lines.Clear;
+  self.linelist := TStringList.Create;
+  www := GreenBeanGrain(2, 1, 1, 2, 1, 1);
+  //if GreenBeanGrain(2, 1, 1, 2, 1, 1) = 1 then
+  begin
+    ShowMessage('ok=' + IntToStr(www));
+    application.ProcessMessages;
+    self.Memo1.Lines.Assign(self.linelist);
+    ShowMessage('Memo=ok=' + IntToStr(linelist.Count));
+    application.ProcessMessages; //290,980 // 1,652,927  //306  //256,244 //132,7070
+    self.Memo1.Lines.SaveToFile('GreenBeanGrain.txt');
+    ShowMessage('txt=ok');
+  end;
+  linelist.Free;
+end;
+
+//function TfrmMain.GreenBeanGrain(aisGreen, xisBean, bisGrain: int64; const Green, Bean, Grain: int64): integer;
+function TfrmMain.GreenBeanGrain(aisGreen, xisBean, bisGrain: longint;
+  const Green, Bean, Grain: longint): integer;
+  //function TfrmMain.GreenBeanGrain(aisGreen, xisBean, bisGrain: integer;
+  //  const Green, Bean, Grain: integer): integer;
+var
+  // a, b, x: int64;
+  a, b, x: longint;
+  //a, b, x: integer;
+  gbg: integer;
+  aa: integer;
+  one: string;
+begin
+  gbg := 0;
+  a := aisGreen;
+  x := xisBean;
+  b := bisGrain;
+
+  aa := 0;
+  if gbg = 0 then
+  begin
+    while (((a mod 2) = 0) and ((b mod 2) = 0)) do
+    begin
+
+      if (((a mod 2) = 0) and ((b mod 2) = 0)) then
+      begin
+        if (((a mod 3) = 0) and ((b mod 3) = 1) and (a >= 3) and (b > 3)) then
+        begin
+          a := a div 3;
+          b := (b - 1) div 3;
+          aa := aa + 1;
+
+        end;
+        if a < Green then
+          gbg := 1
+        else if ((a = Green) and (b < Grain)) then
+          gbg := 1;
+      end;
+      if (((a mod 2) = 0) and ((b mod 2) = 0)) then
+      begin
+        a := a div 2;
+        b := b div 2;
+      end;
+    end;
+    if a < Green then
+      gbg := 1
+    else if ((a = Green) and (b < Grain)) then
+      gbg := 1;
+  end;
+
+
+  if aa = 0 then
+    if gbg = 0 then
+    begin
+      while (((a mod 2) = 0) and ((b mod 2) = 1)) do
+      begin
+        a := a * 3;
+        b := b * 3 + 1;
+
+        while (((a mod 2) = 0) and ((b mod 2) = 0)) do
+        begin
+          a := a div 2;
+          b := b div 2;
+          if (((a mod 2) = 0) and ((b mod 2) = 0)) then
+          begin
+            if (((a mod 3) = 0) and ((b mod 3) = 1) and (a >= 3) and (b > 3)) then
+            begin
+              a := a div 3;
+              b := (b - 1) div 3;
+              aa := aa + 1;
+
+            end;
+            if a < Green then
+              gbg := 1
+            else if ((a = Green) and (b < Grain)) then
+              gbg := 1;
+          end;
+
+        end;
+        if aa>0 then break;
+      end;
+      //if a < 0 then
+      //  application.ProcessMessages;
+      if a < Green then
+        gbg := 1
+      else if ((a = Green) and (b < Grain)) then
+        gbg := 1;
+    end;
+
+
+
+
+  //if 1=0 then
+  if gbg = 1 then
+  begin
+    //if not ((a > 0) and (b>0) and  (Green > 0) and (Grain>0)) then
+    //if  ((a > 0) and (b>0) and  (Green > 0) and (Grain>0)) then
+    //if not ((a > 0) and (b > 0) and (Green > 0) and (Grain > 0)) then
+    begin
+      one := IntToStr(Green) + ' * N' + IntToStr(Bean) + ' + ' +
+        IntToStr(Grain) + ' -->  ' + IntToStr(a) + ' * M' + IntToStr(x) +
+        ' + ' + IntToStr(b) + ' ok ';
+      linelist.add(one);
+      //self.Memo1.Lines.add(one);
+      //application.ProcessMessages;
+      //  if linelist.Count>290980 then
+      //     application.ProcessMessages;
+    end;
+  end;
+  if gbg = 0 then
+  begin
+    //  gbg := GreenBeanGrain(aisGreen * 2, xisBean + 1, bisGrain, Green *
+    //   2, Bean + 1, Grain);
+    gbg := GreenBeanGrain(a * 2, x + 1, b, Green * 2, Bean + 1, Grain);
+    //  if  (aisGreen * 2 mod 3)=0 then
+    //     application.ProcessMessages;
+    //  gbg := gbg * GreenBeanGrain(aisGreen * 2, xisBean + 1, aisGreen +
+    //    bisGrain, Green * 2, Bean + 1, Green + Grain);
+    gbg := gbg * GreenBeanGrain(a * 2, x + 1, a + b, Green * 2,
+      Bean + 1, Green + Grain);
+    //if gbg = 0 then
+    //  ShowMessage('error');
+    //if gbg = 0 then
+    //  application.ProcessMessages;
+  end;
+
+  Result := gbg;
+end;
+    
