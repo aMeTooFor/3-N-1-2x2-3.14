@@ -1,0 +1,58 @@
+                     割圆术求Pi值的重新验证
+                                                                   早通知          2026-02-21
+      忽然，想到，如果假设臆想想像幻想自已是祖冲之，谐音早通知，当如何重新验证割圆术求Pi的近似值？？？这是自已出题自已做，就象读书考试，自已出题自已做，如何？？？分不清啥叫原创，这百度找得到么，找不如自制？不是原创，闭门造车，原创耶，非原创耶，不理了，自制出来看下就行了，不理原创不原创，无利可图，管什么原不原，圆不圆？
+      设圆周长C，半径为1，圆周率Pi=C/2,当特例为一点时，P1＝1，当特例为两点时，数轴原点正负，一来一回包围为线上圆，P2＝2，当三点为正三角形内接圆时，P3=C/2=6*sqr(1*1-0.5*0.5)/2=3*sqr(0.75)=2*sqr3=1.5*1.732...=2.598...
+      当四点为正方形内接圆时，p4=C/2=4*sqr2/2=2*1.414...=2.828...，当五点圆内接正五边形时，暂不理，当六点圆内接正六边形时，网上讲正是祖冲之的起点，为P6=3。而我这里，将不从正六边形开始，而从正四边形开始，加倍割圆术，只有P2,P4,P8...P(2^n)....，趋于极限PI，跳过正五边，正六边，正七边等等，结果一样的，且下标记之，仍是，P1，P2，P3...Pi...实际上是P(2^0),P(2^1),P(2^2),P(2^3)....得到递推公式/递归公式/通项公式，就可以电脑求解乎？？？
+  
+   如图所示，圆心O，半径1，设n时正2^n多边形周长为Pn，n+1时，正2^(n+1)多边形周长为P(n+1),勾股定理/毕达哥拉斯定理/商高定理，得到，AB=P(n+1)/2^(n+1),因为正2^(n+1)多边形周长P(n+1)除以边数2^(n+1)，AD=AC/2=Pn/2^n/2=Pn/2^(n+1),
+OD=sqr(AO*AO-AD*AD)=sqr(1-Pn*Pn/4^(n+1)), DB=OB-OD=1-OD,2^(n+1)
+ 算法一：勾股定理/毕达哥拉斯定理/商高定理
+AB=sqr(AD*AD+DB*DB)=sqr(AD*AD+(1-OD)*(1-OD))=sqr(AD*AD+1+OD*OD-2OD)=sqr(1+1-2OD)=sqr2*sqr(1-OD)   
+算法二：角的正弦值相同
+DB/AB=AB/BE,AB=sqr(DB*BE)=sqr((1-OD)*2)
+所以，P(n+1)/2^(n+1)=sqr2*sqr(1-OD) =sqr2*sqr(1-sqr(1-Pn*Pn/4^(n+1)))
+结论：递推公式：P(n+1)=2^(n+1)*sqr2*sqr(1-sqr(1-Pn*Pn/4^(n+1))),P2=2*sqr2.
+编写代码以验证之：
+procedure TForm1.Button1Click(Sender: TObject);
+var
+  i:integer;
+  pi,ci:double;
+begin
+    ci:= sqrt(2)*4;
+    pi:=ci/2;  //P(n+1)=2^(n+1)*sqr2*sqr(1-sqr(1-Pn*Pn/4^(n+1)))
+    for i:=2 to 11 do
+    begin
+        ci:=power(2,(i+1))*sqrt(2)*sqrt(1-sqrt(1-ci*ci/(power(2,(i+1))*power(2,(i+1))))) ;
+        pi:=ci/2;
+    end;
+    self.caption:= floattostr(pi);
+end;    
+
+
+procedure TForm1.Button1Click(Sender: TObject);
+var
+  i:integer;
+  pi,ci,adad,odod,db:double;
+begin
+    ci:=sqrt(2)*4;  //P(n+1)=2^(n+1)*sqr2*sqr(1-sqr(1-Pn*Pn/4^(n+1)))
+    pi:=ci/2;
+    application.ProcessMessages;
+    for i:=2 to 13 do
+    begin
+        if i=13 then    application.ProcessMessages;
+        adad:= ci*ci/(power(2,(i+1))*power(2,(i+1)));
+        odod:= sqrt(1-adad);
+        ci:=power(2,(i+1))*sqrt(2)*sqrt(1-odod) ;
+        pi:=ci/2;
+        //i=12 pi=3.1415925765450043
+        //i=13   pi=3.1415926334632482
+        //i=14   pi=3.1415926548075896
+        self.caption:= floattostr(pi);
+        application.ProcessMessages;  //sleep....
+    end;
+    pi:=ci/2;
+    self.caption:= floattostr(pi);
+    application.ProcessMessages;
+end;  
+证实这通项公式是对的，在n=13，14时达到普通PC计算机极限，因为数值取值范围超出界限，所以后面的计算出错就不理了
+                                                              
