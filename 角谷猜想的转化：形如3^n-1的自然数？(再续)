@@ -1,0 +1,70 @@
+   角谷猜想的转化：形如3^n-1的自然数？(再续)
+      作者：   3n+1/3^n-1/GrainShell/谷壳（加壳/脱壳）     2026-04-06 
+前文再续,书接上回,话说谷壳猜想,加壳脱壳1与0互补对称,2^n-b=a,左弦黄加壳即右弦黄脱壳,左玄黄脱壳即右玄黄加壳,转化为3^m*2^n-1,再化约3^n-1,这个结论未经证实,我己开始想得天滑滑了(吳川话)。
+今天，决心一试新品（拼音XP）脱壳猜想是不是对的，于是开机，ubuntu+lazarus，表明，脱壳，我原本以为是1212循环的，加壳是124循环的，结果，发现，脱壳不是12循环的，除了12循环外，还有5循环和17循环，然后，测试十万内没有别的循环，不知十万外是不是有新的循环，于是，原先设想的，如何修正左右运算脱壳加壳，又是抑郁不顺，不想理矣。
+将脱壳代码附上，路漫漫其修远兮，抑郁不顺无穷尽。
+procedure Tfrm_GrainShell.Button1Click(Sender: TObject);
+var
+  i, ii, j, k: integer;
+  www:tstringlist;
+begin
+  Memo1.Clear;
+  Memo2.Clear;
+  application.ProcessMessages;
+  www:=tstringlist.Create;
+  www.Add('1');
+  www.Add('5');
+  k:=  strtoint(edit1.text);
+  for i := 1 to k do
+  begin
+    ii := i;
+   // if i = 21 then   //21形成17循环，不是1不是5不是21本身，这种内部检测循环，如何算法？？？
+  //  if i = 25 then
+  if (i mod 1000 =0) then
+      application.ProcessMessages;
+    while (ii mod 2) = 0 do
+      ii := ii div 2;
+    if (ii mod 2) = 1 then
+    begin
+      ii := ii * 3 - 1;////
+    end;
+    while 1 = 1 do
+    begin
+      while (ii mod 2) = 0 do
+        ii := ii div 2;
+      if ii = 1 then
+      begin
+        memo1.Lines.Add(IntToStr(i) + '==1');
+       // application.ProcessMessages;
+        break;//continue;
+      end;
+      if ii = 5 then
+      begin
+        memo1.Lines.Add(IntToStr(i) + '==5');
+      //  application.ProcessMessages;
+        break;//continue;
+      end;
+      if ii = i then
+      begin
+        memo1.Lines.Add(IntToStr(i) + '==' + IntToStr(i));
+        www.Add(inttostr(i));
+       // application.ProcessMessages;
+        break;//continue;
+      end;
+      if www.IndexOf(inttostr(ii))>0 then
+      begin
+        memo1.Lines.Add(IntToStr(i) + '==' + IntToStr(ii));
+        //www.Add(inttostr(i));
+      //  application.ProcessMessages;
+        break;//continue;
+      end;
+      if (ii mod 2) = 1 then
+      begin
+        ii := ii * 3 - 1;////
+      end;
+    end;
+
+  end;
+  memo2.Lines.Assign(www);
+  //www.free;
+end; 
