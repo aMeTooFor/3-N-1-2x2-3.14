@@ -1,4 +1,113 @@
 # 3-N-1-2
+角谷猜想的转化：形如3^n-1的自然数？(续三)
+
+今日终于有点空闲，将前几天的猜想，左脱壳，右加壳，谷壳猜想，写了验证代码，如下结果，好似不太合设想，原以为，转化为3^n-1形式的数，实际如下，右加壳成1，左边，没有同步为3^n-1。2^n-b=a，以a=19来测试，n=14时，结果，b=16365，在a未为1时，a与b的奇偶性总是同步的，在a=1时，b=728，这时，ab奇偶性不同了。有什么用，也是未知的。无解，当玩的，吴川话，当做Lao（第一声）的，捞，吴川话海蛰也。。。。。。
+
+
+2^14 - 16365 = 19
+3^1*2^14 - 49094 = 58
+3^1*2^13 - 24547 = 29
+3^2*2^13 - 73640 = 88
+3^2*2^12 - 36820 = 44
+3^2*2^11 - 18410 = 22
+3^2*2^10 - 9205 = 11
+3^3*2^10 - 27614 = 34
+3^3*2^9 - 13807 = 17
+3^4*2^9 - 41420 = 52
+3^4*2^8 - 20710 = 26
+3^4*2^7 - 10355 = 13
+3^5*2^7 - 31064 = 40
+3^5*2^6 - 15532 = 20
+3^5*2^5 - 7766 = 10
+3^5*2^4 - 3883 = 5
+3^6*2^4 - 11648 = 16
+3^6*2^3 - 5824 = 8
+3^6*2^2 - 2912 = 4
+3^6*2^1 - 1456 = 2
+3^6*2^0 - 728 = 1
+
+procedure Tfrm_GrainShell.Button_LRClick(Sender: TObject);
+var
+  i, j, k, n, nn, m,mm,a,b,c: integer;
+begin
+  n := StrToInt(edit_lr.Text);
+
+  nn := n;
+  m := 0;
+
+  while nn > 1 do
+  begin
+    if (nn mod 2) = 1 then
+    begin
+      nn := nn * 3 + 1;
+    end
+    else
+    begin
+      nn := nn div 2;
+      m := m + 1;
+    end;
+  end;
+
+  c:=trunc(power(2,m));
+  a:=n;
+  b:=c-a;
+
+  memo_lr.lines.Clear;
+  memo_lr.lines.Add('2^'+inttostr(m)+' - '+inttostr(b)+' = '+inttostr(n));
+
+  nn := n;
+ // m := 0;
+  mm:=0;
+  while nn > 1 do
+  begin
+    if (nn mod 2) = 1 then
+    begin
+      nn := nn * 3 + 1;
+      mm:=mm+1;
+      b:=b*3-1;
+  memo_lr.lines.Add('3^'+inttostr(mm)+'*2^'+inttostr(m)+' - '+inttostr(b)+' = '+inttostr(nn));
+    end
+    else
+    begin
+      nn := nn div 2;
+      m := m - 1;
+      b:=b div 2;
+      memo_lr.lines.Add('3^'+inttostr(mm)+'*2^'+inttostr(m)+' - '+inttostr(b)+' = '+inttostr(nn));
+    end;
+  end;
+
+
+
+end;  
+  memo_lr.lines.Clear;
+  memo_lr.lines.Add('2^'+inttostr(m)+' - '+inttostr(b)+' = '+inttostr(n));
+
+  nn := n;
+ // m := 0;
+  mm:=0;
+  while nn > 1 do
+  begin
+    if (nn mod 2) = 1 then
+    begin
+      nn := nn * 3 + 1;
+      mm:=mm+1;
+      b:=b*3-1;
+  memo_lr.lines.Add('3^'+inttostr(mm)+'*2^'+inttostr(m)+' - '+inttostr(b)+' = '+inttostr(nn));
+    end
+    else
+    begin
+      nn := nn div 2;
+      m := m - 1;
+      b:=b div 2;
+      memo_lr.lines.Add('3^'+inttostr(mm)+'*2^'+inttostr(m)+' - '+inttostr(b)+' = '+inttostr(nn));
+    end;
+  end;
+
+
+
+end;  
+
+＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
    角谷猜想的转化：形如3^n-1的自然数？(再续)
    
       作者：   3n+1/3^n-1/GrainShell/谷壳（加壳/脱壳）     2026-04-06 
