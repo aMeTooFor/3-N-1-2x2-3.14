@@ -1,0 +1,665 @@
+ubuntu的lazarus的Tline/TeaLine组件的构思
+
+近来，想到，lazarus没有一个TLine组件，于是自写一个，不太満意，暂时烦，晕，疲，咳，不想理，写代码途中，总是遇到各种不顺的事，尽量不写。。。
+创建一个TeaLine组件，总是刷新不理想：                                                     
+想得容易，构思似乎很好，实际上，做过才知，这个TLine/TeaLine，一开始，刷新不易，后来，可以实现，鼠标一移动，就令窗体或ScrollBox出现滚动条ScrollBar，新的问题又来了：鼠标移动时，当前触发mouseMove事件的组件，覆盖了下面的组件，事件如何传递到被覆盖的底层？用parent的componentCount来循环，又产生更新的问题，不同的Tealine有不同的showHint和不同的hint，如何处理呢？？？
+
+1)若oneline.paint再application. processmessage再oneline.paint,则自动产生scrollBar,若TeaLine组件内onPaint代码去掉self. refresh亦自力产生滚动条.讲明...
+这种事系统级常非下级可控制
+2)TeaLine互相覆盖, MouseMove可判断,然后bringToFront再自然hint
+3)hintWindow或可自定义
+4)要通过getparent或
+getparentForm,再componetCount,这个有没更好算法 
+    一，TeaLine，底线也
+    二，FastLine，最快路径，中线也
+    三，SeaLine，此TSP，上线也
+    四，四色定理染色算法，
+    五，角谷者，五谷也，属性为五乎
+
+    unit TLine;
+
+{$mode objfpc}{$H+}
+//{$I typshrdh.inc}
+//{$I winapih.inc}
+interface
+
+uses
+  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, LCLType,
+  LMessages, StdCtrls, GraphMath, Math;
+
+type
+  //TSize = record
+  //  cx: longint;
+  //  cy: longint;
+  //end;
+  { TeaLine }// Canvas.Line(x1,y1,x2,y2); //TScrollingWinControl(parent).Canvas.Line(x1,y1,x2,y2);
+  TeaLine = class(TGraphicControl)
+    //  TeaLine = class(TeaLine)
+    //TeaLine = class(TGraphicControl)
+    // TeaLine = class(TCanvas)
+    //TeaLine = class(Tshape)
+    //  TeaLine = class(TwinControl)
+    //    TeaLine = class(TCustomControl)
+
+  private
+    FFocusControl: TWinControl;
+    FShowAccelChar: boolean;
+    FInternalSetBounds: boolean;
+  protected
+    class procedure WSRegisterClass; override;
+    procedure DoDrawText(var Rect: TRect; Flags: longint); virtual;
+    procedure WMActivate(var Message: TLMActivate); message LM_ACTIVATE;
+    procedure Notification(AComponent: TComponent; Operation: TOperation); override;
+    function GetLabelText: string; virtual;
+    function GetTransparent: boolean;
+    procedure SetFocusControl(Value: TWinControl);
+    procedure SetTransparent(NewTransparent: boolean);
+    property FocusControl: TWinControl read FFocusControl write SetFocusControl;
+    property Transparent: boolean read GetTransparent write SetTransparent default True;
+  public
+    x1, y1, x2, y2, parentCursorX, parentCursorY: integer;
+    arrow: boolean;
+    wwwhint:string;
+    procedure TTLiLineMouseMove(Sender: TObject; Shift: TShiftState; X, Y: integer);
+    function GetClientRect: TRect; override;
+    function DrawArrow(ccanvas: Tcanvas; bpoint, epoint: tpoint): integer;
+    constructor Create(TheOwner: TComponent); override;
+    procedure Paint; override;
+    property Color;
+  end;
+
+implementation
+
+{ TeaLine }
+function SH_abc(A, B, C: TPoint): double;
+var
+  aa, bb, cc, s: double;
+begin
+  // 计算三边长度
+  aa := Sqrt(Sqr(B.X - C.X) + Sqr(B.Y - C.Y)); // BC边长度
+  bb := Sqrt(Sqr(A.X - C.X) + Sqr(A.Y - C.Y)); // AC边长度
+  cc := Sqrt(Sqr(A.X - B.X) + Sqr(A.Y - B.Y)); // AB边长度
+
+  // 计算半周长
+  s := (aa + bb + cc) / 2;
+
+  // 应用海伦公式计算面积
+  Result := Sqrt(s * (s - aa) * (s - bb) * (s - cc));
+  Result := Result / aa;
+end;
+
+function PointInRect(Point: TPoint; Rect: TRect): boolean;
+begin
+  Result := (Point.X >= Rect.Left) and (Point.X <= Rect.Right) and
+    (Point.Y >= Rect.Top) and (Point.Y <= Rect.Bottom);
+end;
+
+function TeaLine.DrawArrow(ccanvas: Tcanvas; bpoint, epoint: tpoint): integer;
+var
+  arrowSize, arrowSizeHead: integer;
+  angle: double;
+  arrowP1, arrowP2, arrowHead: TPoint;
+  lineAngle, distlength: double;
+  dx, dy: integer;
+  Points: array[0..3] of TPoint;  // 创建一个包含4个点的数组
+  cc: Tcolor;
+begin
+  arrowSize := 20;//10; // 箭头大小
+  arrowSizeHead := 10;   //箭头簇大小
+  dx := epoint.X - bpoint.X;
+  dy := epoint.Y - bpoint.Y;
+
+  // 计算线段角度
+  if dx = 0 then
+  begin
+    if dy > 0 then lineAngle := Pi / 2
+    else
+      lineAngle := -Pi / 2;
+  end
+  else
+  begin
+    lineAngle := ArcTan2(dy, dx);
+  end;
+
+  // 计算箭头两个点的位置
+  arrowP1.X := epoint.X - Round(arrowSize * Cos(lineAngle + Pi / 6));
+  arrowP1.Y := epoint.Y - Round(arrowSize * Sin(lineAngle + Pi / 6));
+
+  arrowP2.X := epoint.X - Round(arrowSize * Cos(lineAngle - Pi / 6));
+  arrowP2.Y := epoint.Y - Round(arrowSize * Sin(lineAngle - Pi / 6));
+
+  distlength := sqrt((epoint.X - bpoint.X) * (epoint.X - bpoint.X) +
+    (epoint.Y - bpoint.Y) * (epoint.Y - bpoint.Y));
+  arrowHead.x := epoint.X - Round((arrowSizeHead / distlength) * (epoint.X - bpoint.X));
+  arrowHead.y := epoint.y - Round((arrowSizeHead / distlength) * (epoint.y - bpoint.y));
+
+  //TScrollingWinControl(self.Parent).Canvas.pen.Width := 2;
+  ccanvas.pen.Width := 2;
+  // 绘制箭头线
+  //TScrollingWinControl(self.Parent).Canvas.Line(bpoint, epoint);  // 主线段
+  ccanvas.Line(bpoint, epoint);  // 主线段
+  Points[0] := epoint;
+  Points[1] := arrowP1;
+  Points[2] := arrowHead;
+  Points[3] := arrowP2;
+  // TScrollingWinControl(self.Parent).Canvas.Brush.Color :=
+  //   TScrollingWinControl(self.Parent).Canvas.pen.Color;
+  cCanvas.Brush.Color := cCanvas.pen.Color;
+  // 设置为填充
+  //  TScrollingWinControl(self.Parent).Canvas.Polygon(Points);
+  cCanvas.Polygon(Points);
+  //cc:=self.ScrollBox1.Canvas.pen.Color;
+  //self.ScrollBox1.Canvas.pen.Color:=clblack;
+  //TScrollingWinControl(self.Parent).Canvas.Line(epoint, arrowP1); // 箭头线1
+  //TScrollingWinControl(self.Parent).Canvas.Line(epoint, arrowP2); // 箭头线2
+  cCanvas.Line(epoint, arrowP1); // 箭头线1
+  cCanvas.Line(epoint, arrowP2); // 箭头线2
+  //self.ScrollBox1.Canvas.pen.Color:=cc;
+  Result := 1;
+end;
+
+function TeaLine.GetClientRect: TRect;
+begin
+  Result.Left := min(x1, x2);
+  Result.top := min(y1, y2);
+  Result.Right := max(x1, x2);
+  Result.Bottom := max(y1, y2);
+end;
+
+procedure TeaLine.DoDrawText(var Rect: TRect; Flags: longint);
+var
+  LabelText: string;
+  OldFontColor: TColor;
+  Rect2: TRect;
+begin
+
+end;
+
+
+
+procedure TeaLine.Notification(AComponent: TComponent; Operation: TOperation);
+begin
+  inherited Notification(AComponent, Operation);
+  if (AComponent = FFocusControl) and (Operation = opRemove) then
+    FFocusControl := nil;
+end;
+
+procedure TeaLine.SetFocusControl(Value: TWinControl);
+begin
+  if Value <> FFocusControl then
+  begin
+    if FFocusControl <> nil then
+      FFocusControl.RemoveFreeNotification(Self);
+    FFocusControl := Value;
+    if Value <> nil then
+      Value.FreeNotification(Self);
+  end;
+end;
+
+procedure TeaLine.WMActivate(var Message: TLMActivate);
+begin
+  if (FFocusControl <> nil) and (FFocusControl.CanFocus) then
+    FFocusControl.SetFocus;
+end;
+
+function TeaLine.GetLabelText: string;
+begin
+  Result := Caption;
+end;
+
+constructor TeaLine.Create(TheOwner: TComponent);
+begin
+  inherited Create(TheOwner);
+  ControlStyle := [csCaptureMouse, csSetCaption, csClickEvents,
+    csDoubleClicks, csReplicatable];
+  with GetControlClassDefaultSize do
+    SetInitialBounds(0, 0, CX, CY);
+
+  FShowAccelChar := True;
+  FInternalSetBounds := False;
+  AutoSize := False;
+  // Accessibility
+  AccessibleRole := larLabel;
+
+  arrow := False;
+  self.OnMouseMove := @TTLiLineMouseMove;
+end;
+
+function TeaLine.GetTransparent: boolean;
+begin
+  Result := not (csOpaque in ControlStyle);
+end;
+
+
+procedure TeaLine.SetTransparent(NewTransparent: boolean);
+begin
+  if Transparent = NewTransparent then
+    exit;
+  if NewTransparent then
+    ControlStyle := ControlStyle - [csOpaque]
+  else
+    ControlStyle := ControlStyle + [csOpaque];
+  Invalidate;
+end;
+
+procedure TeaLine.TTLiLineMouseMove(Sender: TObject; Shift: TShiftState; X, Y: integer);
+var
+  a, b, c, beginp, endp: TPoint;
+  s: double;
+  parentcurp, curp: tpoint;
+  i, ccc: integer;
+  Rect: TRect;
+  x11, x22, y11, y22: integer;
+  curcom: TeaLine;
+  pparent: TScrollingWinControl;//Twincontrol;
+  Hint0: string;
+begin
+  //a.X := x;
+  //a.y := Y;
+  ////b.x:=tealine(sender).x1;
+  ////b.y:=tealine(sender).y1;
+  ////c.x:=tealine(sender).x2;
+  ////c.y:=tealine(sender).y2;
+  //b.x := x1 - min(x1, x2);
+  //b.y := y1 - min(y1, y2);
+  //c.x := x2 - min(x1, x2);
+  //c.y := y2 - min(y1, y2);
+  //s := S_abc(a, b, c);
+  //if s < 10 then
+  //begin
+  //  tealine(Sender).Canvas.pen.Color := clblue;
+  //  tealine(Sender).Canvas.pen.Width := 4;
+  //  tealine(Sender).Canvas.Line(b.x, b.y, c.x, c.y);
+  //end;
+  // canvas.TextOut(0,0,floattostr(s));
+  //self.Hint:='www';
+  //self.ShowHint:=true;
+
+  curp.x := x;
+  curp.y := y;
+  //////////////////////
+  // parentcurp := self.ClientToScreen(curp);
+  parentcurp.x := curp.x + self.Left;
+  parentcurp.y := curp.Y + self.top;
+
+  //   parentcurp.x := curp.x + TScrollingWinControl(self.parent).Left;
+  //  parentcurp.y := curp.Y + TScrollingWinControl(self.Parent).top;
+
+
+  //////////////////////////
+  self.parentCursorX := parentcurp.x;
+  self.parentCursorY := parentcurp.y;
+  // self.Paint;
+  //  curp := self.ScreenToClient(parentcurp);
+  // pparent:= self.parent;
+ // 检查是否应该将事件传递给下层组件
+  //if not (ssLeft in Shift) then  // 如果不是拖动操作
+  //begin
+  //  ParentForm := GetParentForm(Self);
+  //  if Assigned(ParentForm) then
+  //  begin
+  //    // 将坐标转换为屏幕坐标
+  //    LocalPoint := ClientToScreen(Point(X, Y));
+  //
+  //    // 让父窗体处理鼠标消息分发
+  //    ParentForm.Perform(LM_MOUSEMOVE, 0, MakeLParam(LocalPoint.X, LocalPoint.Y));
+  //  end;
+  //end;
+  //pparent := TScrollingWinControl(self.parent);
+  //if self.parent.Parent <> nil then
+  //  pparent := TScrollingWinControl(self.parent.Parent);
+  pparent := GetParentForm(Self);
+  ccc := (pparent).ComponentCount;
+  // ccc:=  twincontrol(pparent).ComponentCount;
+
+  //if 1=2 then
+  //for i := 0 to twincontrol(self.parent).ComponentCount - 1 do
+  //for i := 0 to TScrollingWinControl(self.parent).ComponentCount - 1 do
+  for i := 0 to ccc - 1 do
+  begin
+    if (pparent).Components[i] is TeaLine then
+    begin
+      curcom := TeaLine((pparent).Components[i]);
+      Rect := curcom.clientRect;
+      // if TeaLine(twincontrol(self.parent).Components[i]) <> self then
+      if   curcom.Parent=self.Parent then
+      if PointInRect(parentcurp, Rect) then
+      begin
+        //  TeaLine(twincontrol(self.parent).Component[i]).TTLiLineMouseMove(TeaLine(twincontrol(self.parent).Component[i]),[],);
+        curcom.parentCursorX := parentcurp.x;
+        curcom.parentCursorY := parentcurp.y;
+        x11 := curcom.x1;
+        y11 := curcom.y1;
+        x22 := curcom.x2;
+        y22 := curcom.y2;
+
+
+        a.X := parentcurp.x - curcom.Left;
+        a.y := parentcurp.y - curcom.top;
+
+        b.x := x11 - min(x11, x22);
+        b.y := y11 - min(y11, y22);
+        c.x := x22 - min(x11, x22);
+        c.y := y22 - min(y11, y22);
+        s := SH_abc(a, b, c);
+        if s < 5 then
+        begin
+          //TeaLine(twincontrol(self.parent).Components[i]).Paint;
+         // 使用 BringToFront 和 SendToBack 方法管理组件层级
+          curcom.BringToFront;
+          application.ProcessMessages;
+          curcom.Paint;
+          application.ProcessMessages;
+          //Hint0 := Hint;
+          //if 1=2 then
+          if curcom.ShowHint then
+          begin
+            // curcom.Hint:='123';
+            // curcom.ShowHint := True;
+            //curcom.Hint := curcom.wwwHint;
+            //ShowHint := False;
+          //  application.ProcessMessages;
+           // ShowHint := True;
+           // application.ProcessMessages;
+          end;
+         // else
+          if not curcom.ShowHint then
+          begin
+           // Hint := wwwHint;
+           // ShowHint := False;
+           // application.ProcessMessages;
+          end;
+
+          if 1 = 2 then
+          begin
+            curcom.Canvas.pen.Color := clblue;// clred;//clblue;
+            curcom.Canvas.pen.Width := 4;
+            curcom.Canvas.Line(b.x, b.y, c.x, c.y);
+            //TeaLine(twincontrol(self.parent).Components[i]).Canvas.AutoRedraw:=true;
+            //curcom.SetFocusControl(self.parent);
+            //curcom.Canvas.TextOut(b.x-5, b.y-5,'bbb');
+            //curcom.Canvas.TextOut(c.x-5, c.y-5,'ccc');
+            // curcom.Paint;
+            // curcom.Refresh;
+            // curcom.Canvas.Refresh;
+            // curcom.Click;
+            // application.ProcessMessages;
+            //beginp.x := x1;
+            //beginp.y := y1;
+            //endp.x := x2;
+            //endp.y := y2;
+            //  DrawArrow(pparent.Canvas,beginp, endp);
+            beginp.x := x11;
+            beginp.y := y11;
+            endp.x := x22;
+            endp.y := y22;
+            //   DrawArrow(TScrollingWinControl(self.parent).Canvas,beginp, endp);
+            if curcom.arrow then
+              DrawArrow(curcom.Canvas, b, c);
+            //  curcom.canvas.Brush.Color:=clBtnFace;
+            //          curcom.canvas.TextOut(0, 0, curcom.Name + 'TTLiLineMouseMovex=' + IntToStr(a.x) +
+            //'y=' + IntToStr(a.y));
+            self.Hint := curcom.Name;
+            self.ShowHint := True;
+
+          end;
+        end
+        else
+        begin
+          curcom.Canvas.pen.Color := clBtnFace;//clred;//clBtnFace;//clDefault;
+          curcom.Canvas.pen.Width := 4;
+          curcom.Canvas.Line(b.x, b.y, c.x, c.y);
+          ////
+          beginp.x := x11;
+          beginp.y := y11;
+          endp.x := x22;
+          endp.y := y22;
+          //  DrawArrow(pparent.Canvas,beginp, endp);
+          //   DrawArrow(Canvas,beginp, endp);
+          if curcom.arrow then
+            DrawArrow(curcom.Canvas, b, c);
+          parentcurp.X := parentcursorx;
+          parentcurp.y := parentcursory;
+          ////
+          curcom.Canvas.pen.Color := clblack;
+          curcom.Canvas.pen.Width := 1;
+          curcom.Canvas.Line(b.x, b.y, c.x, c.y);
+          if curcom.arrow then
+            DrawArrow(curcom.Canvas, b, c);
+          //parentcurp.X := parentcursorx;
+          //parentcurp.y := parentcursory;
+          //          curcom.canvas.Brush.Color:=clBtnFace;
+          // curcom.canvas.TextOut(0, 0, curcom.Name + 'TTLiLineMouseMovex=' + IntToStr(a.x) +
+          //'y=' + IntToStr(a.y));
+          // self.Hint:=curcom.Name;
+          // self.ShowHint:=true;
+        end;
+        // TeaLine(twincontrol(self.parent).Components[i]).canvas.TextOut(0, 0, floattostr(s));
+        // self.Refresh;
+        // curcom.canvas.Brush.Color:=clBtnFace;
+        //  curcom.canvas.TextOut(0, 0, curcom.Parent.Name + 'x=' + IntToStr(a.x) +
+        //   'y=' + IntToStr(a.y));
+        // Tform(twincontrol(self.parent)).canvas.FillRect(x11,y11,x22,y22);
+
+        //curcom.Paint;
+        // TeaLine(twincontrol(self.parent).Components[i]).Paint;
+      end;
+    end;
+
+  end;
+  if 1 = 2 then
+  begin
+    pparent := TScrollingWinControl(self.parent);
+    // if pparent.AutoScroll then
+    begin
+      if (pparent.HorzScrollBar = nil) or (pparent.VertScrollBar = nil) then Exit;
+      if pparent.HorzScrollBar.Visible or pparent.VertScrollBar.Visible then
+        pparent.UpdateScrollBars;
+    end;
+    if self.parent.Parent <> nil then
+      pparent := TScrollingWinControl(self.parent.Parent);
+    //  if pparent.AutoScroll then
+    begin
+      if (pparent.HorzScrollBar = nil) or (pparent.VertScrollBar = nil) then Exit;
+      if pparent.HorzScrollBar.Visible or pparent.VertScrollBar.Visible then
+        pparent.UpdateScrollBars;
+    end;
+    //procedure TScrollingWinControl.DoOnResize;
+    //begin
+    //  inherited DoOnResize;
+    //  if AutoScroll then
+    //  begin
+    //    if (HorzScrollBar = nil) or (VertScrollBar = nil) then Exit;
+    //    if HorzScrollBar.Visible or VertScrollBar.Visible then  UpdateScrollBars;
+    //  end;
+    //  //debugln(['TScrollingWinControl.DoOnResize ',DbgSName(Self),' ',dbgs(BoundsRect),' ',dbgs(ClientRect),' ',dbgs(GetLogicalClientRect)]);
+    //end;
+
+  end;
+end;
+
+
+
+procedure TeaLine.Paint;
+var
+  R, CalcRect: TRect;
+  TextLeft, TextTop: integer;
+  Flags: longint;
+  angle: double;
+  parentcurp, curp: tpoint;
+
+  a, b, c, beginp, endp: TPoint;
+  s: double;
+  pparent: TScrollingWinControl;
+begin
+  //TScrollingWinControl(parent).Canvas.Line(x1,y1,x2,y2);
+  Canvas.pen.Color := clblack;//clred;//clblack;
+  Canvas.pen.Width := 1;
+  self.Left := min(x1, x2);
+  self.top := min(y1, y2);
+  self.Width := abs(x1 - x2); //max(x1,x2)-min(x1,x2);
+  self.Height := abs(y1 - y2);
+  // self.Canvas.FillRect(self.ClientRect);
+  // Canvas.Line(x1,y1,x2,y2);
+  // Canvas.Line(0,0,Width,Height);
+  //   R:= GetClientRect;
+  //SetInitialBounds(0, 0, r.Right-r.left, r.bottom-r.top);
+  if ((left = x1) and (top = y1)) then
+    Canvas.Line(0, 0, Width, Height);
+  if ((left = x1) and (top = y2)) then
+    Canvas.Line(0, Height, Width, 0);
+  if ((left = x2) and (top = y1)) then
+    Canvas.Line(0, Height, Width, 0);
+  if ((left = x2) and (top = y2)) then
+    Canvas.Line(0, 0, Width, Height);
+
+
+  //TScrollingWinControl(parent).Canvas.pen.Color := clblack;//clred;//clblack;
+  //TScrollingWinControl(parent).Canvas.pen.Width := 1;
+  //TScrollingWinControl(parent).Canvas.Line(x1,y1,x2,y2);
+  b.x := x1 - min(x1, x2);
+  b.y := y1 - min(y1, y2);
+  c.x := x2 - min(x1, x2);
+  c.y := y2 - min(y1, y2);
+  if arrow then
+    DrawArrow(Canvas, b, c);
+
+  //exit;
+
+  //self.Refresh;
+
+  parentcurp.X := parentcursorx;
+  parentcurp.y := parentcursory;
+  // 在 FMX（跨平台框架）中，没有直接的 PtInRect，但提供了类似功能：
+  //   TRectF.Contains(Point: TPointF) 方法可用于判断点是否在 TRectF
+  //PointInRect(const Poin: TPoint; const Rect: TRect): Boolean
+  //可结合 PtInRect 与 ClientToScreen/ScreenToClient 实现复杂点击
+  //  curp := self.ScreenToClient(parentcurp);
+  //  canvas.Brush.Color:=clred;
+  // canvas.FillRect(x1,y1,x2,y2);
+
+  if PointInRect(parentcurp, self.clientRect) then
+  begin
+    //TTLiLineMouseMove(self, [], curp.x, curp.y);
+    curp.x := parentcurp.X - self.Left;
+    curp.Y := parentcurp.y - self.top;
+    a.X := curp.x;
+    a.y := curp.Y;
+    //b.x:=tealine(sender).x1;
+    //b.y:=tealine(sender).y1;
+    //c.x:=tealine(sender).x2;
+    //c.y:=tealine(sender).y2;
+    b.x := x1 - min(x1, x2);
+    b.y := y1 - min(y1, y2);
+    c.x := x2 - min(x1, x2);
+    c.y := y2 - min(y1, y2);
+    s := SH_abc(a, b, c);
+    if s < 5 then
+    begin
+      Canvas.pen.Color := clblue;
+      Canvas.pen.Width := 4;
+      Canvas.Line(b.x, b.y, c.x, c.y);
+      //beginp.x := x1;
+      //beginp.y := y1;
+      //endp.x := x2;
+      //endp.y := y2;
+      if arrow then
+        DrawArrow(Canvas, b, c);
+
+     // if ShowHint then
+      begin
+       // hint:=wwwhint;
+        //ShowHint := False;
+        //application.ProcessMessages;
+        //ShowHint := True;
+        //application.ProcessMessages;
+      end;
+    end;
+  end;
+  //canvas.TextOut(0, 0, floattostr(s));
+  // self.Hint := self.classname;//'www';
+  //  self.ShowHint := True;
+  //          canvas.Brush.Color:=clBtnFace;
+  //canvas.TextOut(0, 0, Name + 'Paintx=' + IntToStr(a.x) +
+  //      'y=' + IntToStr(a.y));
+  // application.ProcessMessages;
+end;
+
+
+class procedure TeaLine.WSRegisterClass;
+begin
+  inherited WSRegisterClass;
+
+end;
+
+/////come from AI
+//Hint 管理解决方案
+//
+//pascal
+//Copy Code
+//// 在 TeaLine 类中添加
+//private
+//  FHintWindow: THintWindow;
+//  FLastHintPos: TPoint;
+//  FLastHintTime: TDateTime;
+//
+//// 修改鼠标移动事件处理
+//procedure TeaLine.TTLiLineMouseMove(Sender: TObject; Shift: TShiftState; X, Y: integer);
+//var
+//  Distance: Double;
+//  CurrentPos: TPoint;
+//begin
+//  // ... 其他代码 ...
+//
+//  // 处理 Hint 显示
+//  CurrentPos := Point(X, Y);
+//  if (Self.Hint <> '') and Self.ShowHint then
+//  begin
+//    // 检查鼠标移动距离是否足够小
+//    Distance := Sqrt(Sqr(FLastHintPos.X - CurrentPos.X) +
+//                    Sqr(FLastHintPos.Y - CurrentPos.Y));
+//
+//    if (Distance < 5) and ((Now - FLastHintTime) > 0.5/86400) then  // 0.5秒
+//    begin
+//      ShowCustomHint(CurrentPos);
+//      FLastHintTime := Now;
+//    end
+//    else if Distance >= 5 then
+//    begin
+//      HideHint;
+//      FLastHintPos := CurrentPos;
+//    end;
+//  end
+//  else
+//    HideHint;
+//end;
+//
+//procedure TeaLine.ShowCustomHint(Position: TPoint);
+//var
+//  HintRect: TRect;
+//  Offset: TPoint;
+//begin
+//  if not Assigned(FHintWindow) then
+//    FHintWindow := THintWindow.Create(Self);
+//
+//  HintRect := FHintWindow.CalcHintRect(300, Self.Hint, nil);
+//  Offset := ClientToScreen(Point(0, 0));
+//
+//  OffsetRect(HintRect, Offset.X + Position.X + 16, Offset.Y + Position.Y + 16);
+//  FHintWindow.ActivateHint(HintRect, Self.Hint);
+//end;
+//
+//procedure TeaLine.HideHint;
+//begin
+//  if Assigned(FHintWindow) then
+//    FHintWindow.ReleaseHandle;
+//end;
+//
+
+//1)若oneline.paint再application. processmessage再oneline.paint,则自动产生scrollBar,若TeaLine组件内onPaint代码去掉self. refresh亦自力产生滚动条.讲明...
+//这种事系统级常非下级可控制
+//2)TeaLine互相覆盖, MouseMove可判断,然后bringToFront再自然hint
+//3)hintWindow或可自定义
+//4)要通过getparent或
+//getparentForm,再componetCount,这个有没更好算法
+end.
