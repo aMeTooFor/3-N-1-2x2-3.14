@@ -18,6 +18,52 @@
 未对应完美，正常也。
 
 
+////program floyd;
+function floyd;
+var
+  st, en, f: integer;
+  k, n, i, j, x: integer;
+  a: array[1..10, 1..10] of integer;
+  path: array[1..10, 1..10] of integer;
+begin
+  readln(n);
+  for i := 1 to n do
+  begin
+    for j := 1 to n do
+    begin
+      Read(k);
+      if k <> 0 then
+        a[i, j] := k
+      else
+        a[i, j] := maxint;
+      path[i, j] := j;
+    end;
+    readln;
+  end;
+  for x := 1 to n do
+    for i := 1 to n do
+      for j := 1 to n do
+        if a[i, j] > a[i, x] + a[x, j] then
+        begin
+          a[i, j] := a[i, x] + a[x, j];
+          path[i, j] := path[i, x];
+        end;
+  readln(st, en);
+  writeln(a[st, en]);
+  f := st;
+  while f <> en do
+  begin
+    Write(f);
+    Write('-->');
+    f := path[f, en];
+  end;
+  writeln(en);
+
+end;  
+////end.
+
+
+
 
 
 
