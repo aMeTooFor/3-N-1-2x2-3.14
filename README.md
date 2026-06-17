@@ -1,7 +1,8 @@
 # 3-N-1-2
 
-  角谷猜想的弗洛伊德算法的同构映射：数论映射图论 Version3.0  
-        做捞Lao的    2026-06-17  
+      角谷猜想的弗洛伊德算法的同构映射：数论映射图论 Version3.0  
+  
+             做捞Lao的    2026-06-17  
         
 ①前文再续，书接上一回，上回讲到，《一维角谷猜想(1+1)的弗洛伊德算法的同构映射：数论映射图论》《三维角谷猜想(3+1)的弗洛伊德算法的同构映射：数论映射图论》，于是，我想开始构造具体自然数的弗法映射。选哪个数，以最简单的7来试，
 
@@ -79,46 +80,87 @@
 ===================================================
 
 ////program floyd;
+
 function floyd;
+
 var
+
   st, en, f: integer;
+  
   k, n, i, j, x: integer;
+  
   a: array[1..10, 1..10] of integer;
+  
   path: array[1..10, 1..10] of integer;
+  
 begin
+
   readln(n);
+  
   for i := 1 to n do
+  
   begin
+  
     for j := 1 to n do
+    
     begin
+    
       Read(k);
+      
       if k <> 0 then
+      
         a[i, j] := k
+        
       else
+      
         a[i, j] := maxint;
+        
       path[i, j] := j;
+      
     end;
+    
     readln;
+    
   end;
+  
   for x := 1 to n do
+  
     for i := 1 to n do
+    
       for j := 1 to n do
+      
         if a[i, j] > a[i, x] + a[x, j] then
+        
         begin
+        
           a[i, j] := a[i, x] + a[x, j];
+          
           path[i, j] := path[i, x];
+          
         end;
+        
   readln(st, en);
+  
   writeln(a[st, en]);
+  
   f := st;
+  
   while f <> en do
+  
   begin
+  
     Write(f);
+    
     Write('-->');
+    
     f := path[f, en];
+    
   end;
+  
   writeln(en);
+  
 end;  
+
 ////end.
 
 ＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
