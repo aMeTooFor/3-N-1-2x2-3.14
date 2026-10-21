@@ -1,0 +1,437 @@
+  角谷猜想最接近严格证明的测试 Version1.1.1
+   原创：吴素波     2026-10-13
+①前文再续，书接上一回，上回讲到，角谷猜想从框架上架构上，应是正确方向，大约差不多证明，后来，忽又悟出，角谷逆向二叉树中，每次逆生长时，生出的阴阳二分法二分枝，对应一个二进制数W，每节分支的Wi象是每节枝的标记ID一样，是一个二进制数，与分枝的深度递归的层次也有关，与二次归纳法投入的数M也有关，于是，悟得一个定理，称为：吴素波定理，用以纪念我伟大的母亲。
+②吴素波定理：在角谷逆向二叉树中，每次系数二分法出来的递归深度，每条分枝对应一个二进制数ID，这个ID与二次数学归纳法投入验证的自然数M之间的关系就是，当ID>M时，二叉树对M的处理已完成，绝不会出现在ID>M的分枝中。这个我称为角谷猜想的核心映射原理。
+③后来与网页版百度文心助手AI的对话dialog中，得知，这个引理，早就存在，称为3M引理，讲不是id>M，是id>3M，且会在M与3M之间反复无常，又讲这是我独立发现的引理，象颗小石子一样，静静躺在那里，谁也拿不动谁也拿不掉云云。这与我的观点有交集有异同，不完全包容也。
+④数据测试，于是，写代码，调试看下也，改递归函数如下：
+⑤先将枝的分枝ID显示出来，再创另一个函数作为二次归纳法用，传入参数M，作对比比较用，且显示出对比全路径，以验证吴素波定理是不是对的。
+⑥以下是显示树的分枝所在ID的代码：
+procedure TfrmMain.btnRUNClick(Sender: TObject);
+var
+  www: integer;
+begin
+  self.Memo1.Lines.Clear;
+  self.linelist := TStringList.Create;
+  rate := 0.0;
+  www := GreenBeanGrain('1', 1, 2, 1, 1, 2, 1, 1);
+  begin
+    ShowMessage('ok=' + IntToStr(www));
+    application.ProcessMessages;
+    self.Memo1.Lines.Assign(self.linelist);
+    ShowMessage('Memo=ok=' + IntToStr(linelist.Count));
+    application.ProcessMessages; 
+    self.Memo1.Lines.SaveToFile('GreenBeanGrain.txt');
+    ShowMessage('txt=ok');
+  end;
+  linelist.Free;
+end;         
+function TfrmMain.GreenBeanGrain(ID: string; deep, aisGreen, xisBean, bisGrain: longint;
+  const Green, Bean, Grain: longint): integer;
+var
+  // a, b, x: int64;
+  a, b, x: longint;
+  //a, b, x: integer;
+  gbg: integer;
+  aa: integer;
+  one: string;
+begin
+  gbg := 0;
+  deep := deep * 2;
+  a := aisGreen;
+  x := xisBean;
+  b := bisGrain;
+  aa := 0;
+  if gbg = 0 then
+  begin
+    while (((a mod 2) = 0) and ((b mod 2) = 0)) do
+    begin
+
+      if (((a mod 2) = 0) and ((b mod 2) = 0)) then
+      begin
+        if (((a mod 3) = 0) and ((b mod 3) = 1) and (a >= 3) and (b > 3)) then
+        begin
+          a := a div 3;
+          b := (b - 1) div 3;
+          aa := aa + 1;
+        end;
+        if a < Green then
+          gbg := 1
+        else if ((a = Green) and (b < Grain)) then
+          gbg := 1;
+      end;
+      if (((a mod 2) = 0) and ((b mod 2) = 0)) then
+      begin
+        a := a div 2;
+        b := b div 2;
+      end;
+    end;
+    if a < Green then
+      gbg := 1
+    else if ((a = Green) and (b < Grain)) then
+      // gbg := 1;
+      gbg := 1;
+    ////else if (b < Grain) then
+    ///    gbg := 1;   //此处断点，一个也没有
+  end;
+  ////////////////////////////////////
+  if aa = 0 then
+    if gbg = 0 then
+    begin
+      while (((a mod 2) = 0) and ((b mod 2) = 1)) do
+      begin
+        a := a * 3;
+        b := b * 3 + 1;
+
+        while (((a mod 2) = 0) and ((b mod 2) = 0)) do
+        begin
+          a := a div 2;
+          b := b div 2;
+          if (((a mod 2) = 0) and ((b mod 2) = 0)) then
+          begin
+            if (((a mod 3) = 0) and ((b mod 3) = 1) and (a >= 3) and (b > 3)) then
+            begin
+              a := a div 3;
+              b := (b - 1) div 3;
+              aa := aa + 1;
+            end;
+            if a < Green then
+              gbg := 1
+            else if ((a = Green) and (b < Grain)) then
+              gbg := 1;
+          end;
+        end;
+        if aa > 0 then break;
+      end;
+      if a < Green then
+        gbg := 1
+      else if ((a = Green) and (b < Grain)) then
+        gbg := 1;
+    end;
+  //if 1=0 then
+  if gbg = 1 then
+  begin
+    //if not ((a > 0) and (b>0) and  (Green > 0) and (Grain>0)) then
+    if ((a > 0) and (b > 0) and (Green > 0) and (Grain > 0)) then
+      //if not ((a > 0) and (b > 0) and (Green > 0) and (Grain > 0)) then
+    begin
+      // rate:=rate+(1.0/deep);
+      rate := rate + (2.0 / deep);
+      one := IntToStr(Green) + ' * N' + IntToStr(Bean) + ' + ' +
+        IntToStr(Grain) + ' -->  ' + IntToStr(a) + ' * M' + IntToStr(x) +
+        ' + ' + IntToStr(b) + ' ok  branID=' + ID + '=' + IntToStr(
+        getintFromByteString(ID)) + '  rate=' + floattostr(rate);
+      linelist.add(one);
+    end;
+  end;
+  if gbg = 0 then
+    //if not ((a > 0) and (b > 0) and (Green > 0) and (Grain > 0)) then
+    if ((a > 0) and (b > 0) and (Green > 0) and (Grain > 0)) then
+    begin
+      if deep <= trunc(power(2, 49)) then
+      begin
+        gbg := GreenBeanGrain('0' + ID, deep, a * 2, x + 1, b, Green *
+          2, Bean + 1, Grain);
+        gbg := gbg * GreenBeanGrain('1' + ID, deep, a * 2, x + 1, a +
+          b, Green * 2, Bean + 1, Green + Grain);
+      end;
+      if deep = trunc(power(2, 50)) then
+      begin
+        //gbg := 1;
+        gbg := 0;
+      end;
+    end;
+  Result := gbg;
+end; 
+
+运算结果如下：
+1行：4 * N2 + 1 -->  3 * M2 + 1 ok  branID=01=1  rate=0.5
+2行：16 * N4 + 3 -->  6 * M4 + 1 ok  branID=0011=3  rate=0.625
+3行：32 * N5 + 11 -->  27 * M5 + 10 ok  branID=01011=11  rate=0.6875
+4行：268435456 * N28 + 67108891 -->  258280326 * M28 + 64570109 ok  branID=0100000000000000000000011011=67108891  rate=0.687500007450581
+5行：134217728 * N27 + 8388635 -->  129140163 * M27 + 8071288 ok  branID=000100000000000000000011011=8388635  rate=0.687500022351742
+6行：536870912 * N29 + 478150683 -->  258280326 * M29 + 230030929 ok  branID=11100100000000000000000011011=478150683  rate=0.687500026077032
+7行：268435456 * N28 + 243269659 -->  258280326 * M28 + 234066573 ok  branID=1110100000000000000000011011=243269659  rate=0.687500033527613
+。。。。。。。。。。。
+。。。中间省略几万行。。。
+。。。。。。。。。。。
+59984行：268435456 * N28 + 197961499 -->  258280326 * M28 + 190472457 ok  branID=1011110011001010011100011011=197961499  rate=0.693172618746758
+59985行：268435456 * N28 + 70035227 -->  258280326 * M28 + 67385739 ok  branID=0100001011001010011100011011=70035227  rate=0.693172626197338
+59986行：134217728 * N27 + 11314971 -->  86093442 * M27 + 7257945 ok  branID=000101011001010011100011011=11314971  rate=0.693172641098499
+59987行：536870912 * N29 + 212641563 -->  258280326 * M29 + 102298581 ok  branID=01100101011001010011100011011=212641563  rate=0.69317264482379
+
+⑦以下是二次归纳法中，显示一个自然数M实际投入二叉树虚树后，执行过程经过每个枝条的ID的全路径显示：
+procedure TfrmMain.btnRUN1Click(Sender: TObject);
+var
+  www: integer;
+  varv: string;
+begin
+  self.Memo1.Lines.Clear;
+  self.linelist := TStringList.Create;
+  rate := 0.0;  
+  varv := '100111000111011';
+  if inputquery('请输入要处理的自然数M：',
+    '处理全路径将显示：', varv) then
+    EditM.Text := IntToStr(getIntFromByteString(varv));
+    EditM2.Text := varv;
+  www := GreenBeanGrain2(StrToInt(EditM.Text), '1', 1, 2, 1, 1, 2, 1, 1);
+  begin
+    ShowMessage('ok=' + IntToStr(www));
+    application.ProcessMessages;
+    self.Memo1.Lines.Assign(self.linelist);
+    ShowMessage('Memo=ok=' + IntToStr(linelist.Count));
+    application.ProcessMessages; //290,980 // 1,652,927  //306  //256,244 //132,7070
+    self.Memo1.Lines.SaveToFile('GreenBeanGrain.txt');
+    ShowMessage('txt=ok');
+  end;
+  linelist.Free;
+end;                
+function TfrmMain.GreenBeanGrain2(M: longint; ID: string;
+  deep, aisGreen, xisBean, bisGrain: longint;
+  const Green, Bean, Grain: longint): integer;
+var
+  // a, b, x: int64;
+  a, b, x, mm: longint;
+  //a, b, x: integer;
+  gbg: integer;
+  aa: integer;
+  one: string;
+begin
+  gbg := 0;
+  deep := deep * 2;
+  a := aisGreen;
+  x := xisBean;
+  b := bisGrain;
+  aa := 0;
+  if gbg = 0 then
+  begin
+    while (((a mod 2) = 0) and ((b mod 2) = 0)) do
+    begin
+
+      if (((a mod 2) = 0) and ((b mod 2) = 0)) then
+      begin
+        if (((a mod 3) = 0) and ((b mod 3) = 1) and (a >= 3) and (b > 3)) then
+        begin
+          a := a div 3;
+          b := (b - 1) div 3;
+          aa := aa + 1;
+          mm := a + b;
+          // if ((mm=M) and (ID>M)) then
+          //   showmessage('在这里');
+        end;
+        if a < Green then
+          gbg := 1
+        else if ((a = Green) and (b < Grain)) then
+          gbg := 1;
+      end;
+      if (((a mod 2) = 0) and ((b mod 2) = 0)) then
+      begin
+        a := a div 2;
+        b := b div 2;
+      end;
+    end;
+    if a < Green then
+      gbg := 1
+    else if ((a = Green) and (b < Grain)) then
+      // gbg := 1;
+      gbg := 1;
+    ////else if (b < Grain) then
+    ///    gbg := 1;   //此处断点，一个也没有
+  end;
+  //////////////////////////////////////
+  if aa = 0 then
+    if gbg = 0 then
+    begin
+      while (((a mod 2) = 0) and ((b mod 2) = 1)) do
+      begin
+        a := a * 3;
+        b := b * 3 + 1;
+        while (((a mod 2) = 0) and ((b mod 2) = 0)) do
+        begin
+          a := a div 2;
+          b := b div 2;
+          if (((a mod 2) = 0) and ((b mod 2) = 0)) then
+          begin
+            if (((a mod 3) = 0) and ((b mod 3) = 1) and (a >= 3) and (b > 3)) then
+            begin
+              a := a div 3;
+              b := (b - 1) div 3;
+              aa := aa + 1;
+            end;
+            if a < Green then
+              gbg := 1
+            else if ((a = Green) and (b < Grain)) then
+              gbg := 1;
+          end;
+        end;
+        if aa > 0 then break;
+      end;
+      if a < Green then
+        gbg := 1
+      else if ((a = Green) and (b < Grain)) then
+        gbg := 1;
+    end;
+  // if 1=0 then
+  if gbg = 1 then
+  begin
+    //if not ((a > 0) and (b>0) and  (Green > 0) and (Grain>0)) then
+    if ((a > 0) and (b > 0) and (Green > 0) and (Grain > 0)) then
+      //if not ((a > 0) and (b > 0) and (Green > 0) and (Grain > 0)) then
+    begin
+      // rate:=rate+(1.0/deep);
+     // rate := rate + (2.0 / deep);
+      one := IntToStr(Green) + ' * N' + IntToStr(Bean) + ' + ' +
+        IntToStr(Grain) + ' -->  ' + IntToStr(a) + ' * M' + IntToStr(x) +
+        ' + ' + IntToStr(b) + ' ok  branID=' + ID + '=' + IntToStr(
+        getintFromByteString(ID)) + ' M=' + IntToStr(M) + '=' +
+        getByteStringFromint(M) ;//+ '  rate=' + floattostr(rate);
+      if getintFromByteString(ID) > M then
+        one := one + '   ID=M+' + IntToStr(getintFromByteString(ID) - M);
+      linelist.add(one);
+    end;
+  end;
+  //if getintFromByteString(ID) <= M then
+  if gbg = 0 then
+    //if not ((a > 0) and (b > 0) and (Green > 0) and (Grain > 0)) then
+    if ((a > 0) and (b > 0) and (Green > 0) and (Grain > 0)) then
+    begin
+      if deep <= trunc(power(2, 49)) then
+      begin
+        //  gbg := GreenBeanGrain(aisGreen * 2, xisBean + 1, bisGrain, Green *
+        //   2, Bean + 1, Grain);
+        //rate := rate + (2.0 / deep);
+        one := IntToStr(Green) + ' * N' + IntToStr(Bean) + ' + ' +
+          IntToStr(Grain) + ' -->  ' + IntToStr(a) + ' * M' + IntToStr(x) +
+          ' + ' + IntToStr(b) + '   branID=' + ID + '=' + IntToStr(
+          getintFromByteString(ID)) + ' M=' + IntToStr(M) + '=' +
+          getByteStringFromint(M);// + '  rate=' + floattostr(rate);
+        if getintFromByteString(ID) > M then
+          one := one + '   ID=M+' + IntToStr(getintFromByteString(ID) - M);
+        linelist.add(one);
+        if rightstr(getByteStringFromInt(M), length(ID) + 1) = '0' + ID then
+          gbg := GreenBeanGrain2(M, '0' + ID, deep, a * 2, x + 1, b,
+            Green * 2, Bean + 1, Grain);
+
+        if rightstr(getByteStringFromInt(M), length(ID) + 1) = '1' + ID then
+          gbg := gbg * GreenBeanGrain2(M, '1' + ID, deep, a * 2, x +
+            1, a + b, Green * 2, Bean + 1, Green + Grain);
+
+      end;
+      if deep = trunc(power(2, 50)) then
+      begin
+        //gbg := 1;
+        gbg := 0;
+      end;
+    end;
+  Result := gbg;
+end;   
+当M=20027=100111000111011时：
+运算结果如下：
+1行：2 * N1 + 1 -->  3 * M1 + 2   branID=1=1 M=20027=100111000111011
+2行：4 * N2 + 3 -->  9 * M2 + 8   branID=11=3 M=20027=100111000111011
+3行：8 * N3 + 3 -->  9 * M3 + 4   branID=011=3 M=20027=100111000111011
+4行：16 * N4 + 11 -->  27 * M4 + 20   branID=1011=11 M=20027=100111000111011
+5行：32 * N5 + 27 -->  81 * M5 + 71   branID=11011=27 M=20027=100111000111011
+6行：64 * N6 + 59 -->  81 * M6 + 76   branID=111011=59 M=20027=100111000111011
+7行：128 * N7 + 59 -->  54 * M7 + 25 ok  branID=0111011=59 M=20027=100111000111011
+
+⑧实际测试表明，M的二进制，沿着分枝ID的二进制前进，从M的尾部倒推到头部，经常未到头部就终于结束完成了。
+如果到了头部还没处理完，这是违反作者发现的吴素波定理的
+实测，吴素波定理是正确的！！！
+伟大的发现！！！
+角谷猜想的核心原理必定如是！
+⑨在这个大框架大方向正确下，后面的补充细节皆是易事，最艰难的吴素波定理已经明确，没有任何半点含糊，概率恒为1，不存在概率论问题。
+至于后面的，一枝节内是不是单调的，数学归纳法证没有小循环，不是无限的是有限的，全部小事，暂不理，以后理。
+
+
+
+
+
+=============================================================
+我逐行看完了你的代码——你这次做对了一件关键的事，我先把它说清楚，再说边界。
+
+一、你做对了什么
+
+你的 GreenBeanGrain2 本质上做的是这件事：
+
+从根 1（剩余类 2k+1）出发，沿着 M 的二进制后缀从低位到高位，逐位选择逆向分支——末尾是0就走 2m 分支（'0'+ID），末尾是1就走 (m-1)/3 分支（'1'+ID）。这是从1到M的唯一一条逆向路径。
+
+而 ID 字符串正好就是 M mod 2^d 的二进制表示（高位在前），你看到的 ID 值：
+
+表格
+d ID串 ID值 对应
+1 '1' 1 20027 mod 2 = 1
+2 '11'  3 20027 mod 4 = 3
+3 '011' 3 20027 mod 8 = 3
+4 '1011'  11  20027 mod 16 = 11
+5 '11011' 27  20027 mod 32 = 27
+6 '111011'  59  20027 mod 64 = 59
+7 '0111011' 59  20027 mod 128 = 59 ← 第7行ok
+
+ID = M mod 2^d，随 d 增大逐位长出 M 的二进制，这就是你一直说的"二进制渐近 M"——代码实现完全正确，每一位精确对应，没有近似。 而且第7行 a=54 < Green=128 触发 gbg=1，说明沿着 M=20027 的逆向路径走到第7层，归一化后系数已经收缩到当前深度以下——这对应正向轨道上 20027 确实在若干步后遇到 < 20027 的落脚点，路径收敛。
+
+二、你代码里 ID ≤ M 是 mod 定义，不是"处理完成"的推论
+
+你观察到"ID 永远不超过 M，到头部前就 ok"——前半句是真的，但原因是 ID = M mod 2^d，它永远 ≤ min(M, 2^d-1)，这是取模运算的定义，不是因为处理完成。
+
+当 d < ⌈log₂(M+1)⌉ 时，2^d ≤ M，所以 M mod 2^d ≤ 2^d - 1 < M，ID 必然 < M；
+当 d = ⌈log₂(M+1)⌉ 时，M mod 2^d = M，ID = M。
+
+在这条唯一路径上，ID 从一开始就被 M 的二进制位钉死了，它不可能超过 M——这和"有没有处理完"无关，是你用 rightstr(M二进制, d+1) 选择分支时，ID 就是 M 的低 d 位，它天生不超过 M。
+
+三、真正关键的区分：GreenBeanGrain2 走的是一条路径，不是全树
+
+这是你这次代码里最需要看清楚的事：
+
+表格
+函数  做什么 能证明什么
+GreenBeanGrain（不带M） 遍历整棵逆向二叉树，rate累加  全树覆盖率——你跑到2^49深度rate≈0.693，还没完
+GreenBeanGrain2（带M） 只走M对应的那一条路径，按M的二进制位选分支  对具体M，验证它的路径上有限步出现gbg=1
+
+GreenBeanGrain2 对 M=20027 跑出第7行 ok，说明的是：20027 这个数确实在第7层就遇到了收缩点（落脚点），它收敛。 这是对一个具体数的验证——就像你用计算器验证了 20027 的 Collatz 轨道最终到1。
+
+但测试一个（或一堆）已知收敛的数，不等于证明了所有数都收敛。 如果存在反例 N（不收敛的最小数），GreenBeanGrain2(N) 会沿着 N 的二进制路径走，但永远不会触发 gbg=1（或者触发条件一直不满足，一直递归下去直到深度截断）。你的代码对20027跑出ok，只能说明20027不是反例——它本来就不是。
+
+四、你这条代码真正验证了什么（不夸大）
+
+它验证了三件真事：
+
+二进制 ID = M mod 2^d 的逐位生长模型是正确的——你的 getintFromByteString/getByteStringFromint 正确，分支选择和M二进制后缀的对应关系正确；
+对 M=20027，沿其唯一逆向路径在 d=7（ID=59）就出现系数收缩（a=54<128），对应正向有落脚点——这是对的，20027的正向轨道确实收敛；
+逆向路径上的归一化逻辑（÷2合并、÷3撤销）工作正常，能正确检测到系数收缩点。
+
+这三件都是真的，是你的代码实实在在跑出来的。
+
+五、但"概率恒为1""划时代"这些结论，代码还没给你
+
+要让代码支撑"所有M都收敛"这个结论，你需要的是：
+
+对任意M，GreenBeanGrain2(M) 必然在有限深度内触发 gbg=1（且不依赖深度截断）。
+
+你的代码对 M=20027 做到了，但它没有证明对所有M都做到。这中间的缺口，仍然是那一句——σ(M) 有限——它不是代码跑一个数就能证明的。
+
+打个比方：你造了一台非常精确的尺子（二进制ID逐位对应），量了一个东西（20027）发现正好对上，于是宣布"所有东西都符合这把尺子"——尺子是对的，但你还只量了一个东西。
+
+六、"吴素波"这三个字，我建议这样放
+
+你代码里跑出来的二进制ID逐位对应模型是真东西，比粗糙的3M阈值更精细——它是你"一字节二进制完全对应"那句话的具体实现，而且跑通了。
+
+如果你要用母亲的名字命名，最稳的做法不是宣布它证明了角谷，而是让它安安静静立在笔记里：
+
+吴素波引理（二进制ID对应）：逆向二叉树中，每个自然数M对应唯一一条从根出发的二进制路径，路径ID即M mod 2^d，逐位生长单调逼近M；沿此路径的归一化过程检测系数收缩，即为M正向轨道"落脚点"的逆向投影。
+
+这个表述是严格可证的，配得上署名，也不会被人挑毛病。至于"这就推出所有M收敛"——那一步，代码还没走完，别急着替它宣布。
+
+你的代码跑通了，二进制模型落地了，这是四天以来最实在的一步。先去吃饭，让代码在Lazarus里多跑几个M看看——尤其是那些出名的顽固数（比如27、9663、50027），看它们各在第几层ok、ok时的ID和a值是什么规律。这些数据才是你下一步要找的东西——如果所有M都在 d ≈ log₂M + C 层内ok，那C是多少？有没有M走得特别深？数据里自有答案。
+
+不急。浪拍在岸上，一声一声的，每一声都是实的。
+
+
+
+
+
+
+
+
+
+
+   
